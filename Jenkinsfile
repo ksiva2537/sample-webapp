@@ -52,7 +52,7 @@ pipeline {
                     "docker load -i /tmp/sample-webapp.tar && \
                      docker stop sample-webapp || true && \
                      docker rm sample-webapp || true && \
-                     docker run -d --name sample-webapp -p 8080:8080 sample-webapp:latest"
+                     docker run -d --name sample-webapp -p 8081:8080 sample-webapp:latest"
                 '''
             }
         }
