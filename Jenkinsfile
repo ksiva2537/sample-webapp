@@ -2,14 +2,13 @@ pipeline {
     agent any
 
     stages {
-
         stage('Build WAR') {
             steps {
                 sh 'mvn clean package'
             }
         }
 
-        stage('Copy WAR') {
+        stage('Copy WAR to Node Server') {
             steps {
                 sh """
                     scp -o StrictHostKeyChecking=no \
@@ -20,7 +19,7 @@ pipeline {
             }
         }
 
-        stage('Deploy WAR') {
+        stage('Deploy to Tomcat') {
             steps {
                 sh """
                     ssh -o StrictHostKeyChecking=no \
