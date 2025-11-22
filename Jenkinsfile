@@ -1,7 +1,7 @@
 pipeline {
   agent any
   environment {
-    NODE_IP = "13.126.114.136"          // replace
+    NODE_IP = "192.168.1.82"          // replace
     DEPLOY_USER = "deploy"
     SSH_KEY = "/var/lib/jenkins/.ssh/id_ed25519"  // Jenkins user key path
     TOMCAT_WEBAPP_DIR = "/var/lib/tomcat10/webapps"
