@@ -2,31 +2,57 @@ pipeline {
     agent any
 
     stages {
-        stage('checkout from git') {
+
+        stage('Checkout from GitHub') {
             steps {
-                checkout scmGit(
-                    branches: [[name: '*/main']],
-                    extensions: [],
-                    userRemoteConfigs: [[url: 'https://github.com/ksiva2537/sample-webapp.git']]
-                )
+                git branch: 'main',
+                    url: 'https://github.com/ksiva2537/sample-webapp.git'
             }
         }
 
-        stage('building the package') {
+        stage('Build WAR') {
             steps {
                 sh 'mvn clean package'
             }
         }
-        
-        stage('deploying the project') {
+
+        stage('Build Docker Image') {
             steps {
-                // Copy WAR file to remote server
-                sh 'scp -i /var/lib/jenkins/.ssh/id_ed25519 /var/lib/jenkins/workspace/job5_sample_web/target/sample-webapp-1.0-SNAPSHOT.war deploy@192.168.1.82:/tmp/sample-webapp-1.0-SNAPSHOT.war'
-                
-                // Correct SSH command with proper quoting
                 sh '''
-                ssh -i /var/lib/jenkins/.ssh/id_ed25519 deploy@192.168.1.82 \
-                "sudo mv /tmp/sample-webapp-1.0-SNAPSHOT.war /var/lib/tomcat10/webapps/sample-webapp-1.0-SNAPSHOT.war"
+                    docker build -t sample-webapp:latest .
+                '''
+            }
+        }
+
+        stage('Save Docker Image') {
+            steps {
+                sh '''
+                    docker save sample-webapp:latest -o sample-webapp.tar
+                '''
+            }
+        }
+
+        stage('Copy Docker Image to Remote Node') {
+            steps {
+                sh '''
+                    scp -o StrictHostKeyChecking=no \
+                    -i /var/lib/jenkins/.ssh/id_ed25519 \
+                    sample-webapp.tar \
+                    deploy@192.168.1.82:/tmp/sample-webapp.tar
+                '''
+            }
+        }
+
+        stage('Deploy Docker Container on Node') {
+            steps {
+                sh '''
+                    ssh -o StrictHostKeyChecking=no \
+                    -i /var/lib/jenkins/.ssh/id_ed25519 \
+                    deploy@192.168.1.82 \
+                    "docker load -i /tmp/sample-webapp.tar && \
+                     docker stop sample-webapp || true && \
+                     docker rm sample-webapp || true && \
+                     docker run -d --name sample-webapp -p 8080:8080 sample-webapp:latest"
                 '''
             }
         }
