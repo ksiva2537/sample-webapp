@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_IMAGE = "ksiva2537/sample-webapp:latest"
+    }
+
     stages {
 
         stage('Checkout from GitHub') {
@@ -18,41 +22,33 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                    docker build -t sample-webapp:latest .
-                '''
+                sh 'docker build -t $DOCKER_IMAGE .'
             }
         }
 
-        stage('Save Docker Image') {
+        stage('Login to DockerHub') {
             steps {
-                sh '''
-                    docker save sample-webapp:latest -o sample-webapp.tar
-                '''
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'ksiva2537',
+                    passwordVariable: 'dckr_pat_uASBSoFx4_D1KIBGSieQWQ8uHbA'
+                )]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                }
             }
         }
 
-        stage('Copy Docker Image to Remote Node') {
+        stage('Push Image to DockerHub') {
             steps {
-                sh '''
-                    scp -o StrictHostKeyChecking=no \
-                    -i /var/lib/jenkins/.ssh/id_ed25519 \
-                    sample-webapp.tar \
-                    deploy@192.168.1.82:/tmp/sample-webapp.tar
-                '''
+                sh 'docker push $DOCKER_IMAGE'
             }
         }
 
-        stage('Deploy Docker Container on Node') {
+        stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                    ssh -o StrictHostKeyChecking=no \
-                    -i /var/lib/jenkins/.ssh/id_ed25519 \
-                    deploy@192.168.1.82 \
-                    "docker load -i /tmp/sample-webapp.tar && \
-                     docker stop sample-webapp || true && \
-                     docker rm sample-webapp || true && \
-                     docker run -d --name sample-webapp -p 8081:8080 sample-webapp:latest"
+                kubectl apply -f k8s/deployment.yaml
+                kubectl apply -f k8s/service.yaml
                 '''
             }
         }
