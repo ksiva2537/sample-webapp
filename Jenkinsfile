@@ -9,7 +9,7 @@ pipeline {
 
         stage('Checkout from GitHub') {
             steps {
-                git branch: 'main',
+                git branch: 'hotfix/login-crash',
                     url: 'https://github.com/ksiva2537/sample-webapp.git'
             }
         }
