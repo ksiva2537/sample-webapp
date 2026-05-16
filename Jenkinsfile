@@ -9,7 +9,7 @@ pipeline {
 
         stage('Checkout from GitHub') {
             steps {
-                git branch: 'main',
+                git branch: 'siva',
                     url: 'https://github.com/ksiva2537/sample-webapp.git'
             }
         }
