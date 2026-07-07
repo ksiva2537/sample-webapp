@@ -21,3 +21,6 @@ jobs:
 
       - name: Build WAR File
         run: mvn clean package
+
+      - name: Build Docker Image
+        run: docker build -t myapp:latest .
